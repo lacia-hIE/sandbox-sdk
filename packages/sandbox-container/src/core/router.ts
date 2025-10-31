@@ -113,11 +113,18 @@ export class Router {
   /**
    * Check if a route path matches the request path
    * Supports basic dynamic routes like /api/process/{id}
+   * Special handling for /proxy/{port} to match /proxy/{port}/* patterns
    */
   private pathMatches(routePath: string, requestPath: string): boolean {
     // Exact match
     if (routePath === requestPath) {
       return true;
+    }
+
+    // Special handling for proxy routes: /proxy/{port} matches /proxy/{port}/*
+    if (routePath.startsWith('/proxy/{port}')) {
+      const proxyPattern = /^\/proxy\/(\d+)(\/.*)?$/;
+      return proxyPattern.test(requestPath);
     }
 
     // Dynamic route matching

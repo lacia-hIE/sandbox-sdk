@@ -24,7 +24,49 @@ async function createApplication(): Promise<{
   setupRoutes(router, container);
 
   return {
-    fetch: (req: Request) => router.route(req)
+    fetch: (req: Request) => {
+      // Subdomain routing: Check if request uses port-prefix subdomain pattern
+      // Format: <port>-<identifier>.<domain> -> routes to /proxy/<port>
+      // Example: 8080-myapp.localhost/api -> /proxy/8080/api
+      const url = new URL(req.url);
+      const subdomainMatch = url.hostname.match(/^(\d{4,5})-(.+)$/);
+      
+      if (subdomainMatch) {
+        const portStr = subdomainMatch[1];
+        const port = parseInt(portStr, 10);
+        
+        // Valid port range check (exclude control plane port 3000)
+        if (port >= 1024 && port <= 65535 && port !== 3000) {
+          logger.debug('Subdomain routing detected', {
+            originalHostname: url.hostname,
+            extractedPort: port,
+            path: url.pathname
+          });
+          
+          // Rewrite URL to use /proxy/{port} path, preserving protocol and host
+          const proxyPath = `/proxy/${port}${url.pathname}${url.search}`;
+          const proxyUrl = `${url.protocol}//${url.host}${proxyPath}`;
+          
+          // Create new request with proxy path
+          const proxyRequest = new Request(proxyUrl, {
+            method: req.method,
+            headers: req.headers,
+            body: req.body
+          });
+          
+          logger.debug('Routing via proxy', {
+            originalUrl: req.url,
+            proxyPath,
+            port
+          });
+          
+          return router.route(proxyRequest);
+        }
+      }
+      
+      // Normal routing for non-subdomain requests
+      return router.route(req);
+    }
   };
 }
 
