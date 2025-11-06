@@ -13,6 +13,8 @@ export class MiscHandler extends BaseHandler<Request, Response> {
     switch (pathname) {
       case '/':
         return await this.handleRoot(request, context);
+      case '/api/ping':
+        return await this.handleHealth(request, context);
       case '/api/health':
         return await this.handleHealth(request, context);
       case '/api/shutdown':

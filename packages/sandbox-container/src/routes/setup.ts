@@ -275,6 +275,13 @@ export function setupRoutes(router: Router, container: Container): void {
 
   router.register({
     method: 'GET',
+    path: '/api/health',
+    handler: async (req, ctx) => container.get('miscHandler').handle(req, ctx),
+    middleware: [container.get('loggingMiddleware')]
+  });
+
+  router.register({
+    method: 'GET',
     path: '/api/commands',
     handler: async (req, ctx) => container.get('miscHandler').handle(req, ctx),
     middleware: [container.get('loggingMiddleware')]

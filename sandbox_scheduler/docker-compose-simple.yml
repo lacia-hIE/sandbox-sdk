@@ -1,0 +1,30 @@
+version: '3.8'
+
+# 简化版 Docker Compose 配置
+# 只启动调度器服务，容器由调度器动态创建
+
+services:
+  scheduler:
+    build:
+      context: ..
+      dockerfile: sandbox_scheduler/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      # 挂载 Docker socket，允许调度器创建容器
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - SCHEDULER_PORT=8000
+      - CONTAINER_IMAGE=agent-loop-cf_sandbox:latest
+      - CONTAINER_BASE_PORT=3001
+      - CONTAINER_HOST=localhost
+      - MAX_CONTAINERS=100
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    networks:
+      - sandbox-network
+
+networks:
+  sandbox-network:
+    driver: bridge
+
